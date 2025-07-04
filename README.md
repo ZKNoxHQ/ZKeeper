@@ -7,12 +7,28 @@
   <img src="https://github.com/user-attachments/assets/fb63c8fc-f103-438d-b609-038cb448638f" alt="The PQ King" width="350"/>
 </p>
 <p align="center">
-  <small>(The PQ KING)</small>
+  
 </p>
 
 -----
 
 ## 🚀 Description
+
+This projects demonstrates role based access control enforced by EIP-7702.
+RBAC is a model for authorizing end-user access to systems. Zkeeper RBAC prevents hacks like Bybit, which are also possible bc. same keys are used for "sudo"  cmd (configuration, admin power) and basic commands.
+By separating **physically** admin functions (using different devices), user are protected from misbehavior, or trapped UI.
+
+### How does this work ?
+
+The sudo account is protected by FALCON signatures, why standard commands are signed by ecdsa. At the entrance of Zkeeper, an analyzer estimates the level (sudo, standard) of the transaction. Then it is forwarded to be signed by the right role.
+
+### What is serious and what is mocked ?
+
+#### Accomplished work
+
+#### Mocked parts
+
+The analysis of transactions is mocked by a simple analysis of the amount of the transaction. In the future, a service like blockAID or similar, instead of being limited to Go/noGO shall provide the role required to execute the transaction.
 
 
 -----
