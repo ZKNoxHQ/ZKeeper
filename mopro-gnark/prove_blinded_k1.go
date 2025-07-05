@@ -68,23 +68,23 @@ func main() {
 	// 8. Test the ReadFromFile functionality
 	// 1. Read back the compiled circuit
 	loadedR1CS := plonk.NewCS(ecc.BN254)
-	err := readFromFile("r1cs.bin", loadedR1CS)
+	err := readFromFile("R1CS.BIN", loadedR1CS)
 	fmt.Printf("Read R1CS.BIN (Constraints: %d)\n", loadedR1CS.GetNbConstraints())
 
 	// 2. Read back the proving key
 	loadedPK := plonk.NewProvingKey(ecc.BN254)
-	err = readFromFile("proving_key.bin", loadedPK)
+	err = readFromFile("PROVING_KEY.BIN", loadedPK)
 	fmt.Println("Read PROVING_KEY.BIN")
 
 	// 3. Read back the verifying key
 	loadedVK := plonk.NewVerifyingKey(ecc.BN254)
-	err = readFromFile("verifying_key.bin", loadedVK)
+	err = readFromFile("VERIFYING_KEY.BIN", loadedVK)
 	fmt.Println("Read VERIFYING_KEY.BIN")
 
 	// 4. Read back the prove input JSON
 	var loadedProveInput ProveInputEcdsa
-	err = readFromFile("witness_input.json", &loadedProveInput)
-	fmt.Println("Read witness_input.json")
+	err = readFromFile("WITNESS_INPUT.JSON", &loadedProveInput)
+	fmt.Println("Read WITNESS_INPUT.JSON")
 
 	// Decode hex strings back to big.Int and byte slices for witness construction
 	rBytes, err := hex.DecodeString(loadedProveInput.R)
