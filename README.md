@@ -62,7 +62,9 @@ The sudo account is protected by FALCON signatures, why standard commands are si
 The current assessment proved is "I know a preimage of commitment = H(Kpub, Nonce) with the same key related to the verification of the input message hash", to commit the public key in the contract without revealing it. This will allow to increase the number of shares, pick a threshold in the future. Currently it is hiding the public key value, and provide a resistance against a trapped HW. In case of loss of the nonce, sudo shall be used to restore a new ZK contract.
 
 private input: nonce, kpub, signature (r,s)
+
 public input: message hash
+
 incircuit verification: h(kpub, nonce)=commitment && ecdsaVerify(kpub, messagehash, r,s)=true
 
 
