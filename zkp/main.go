@@ -316,12 +316,12 @@ func export_to_solidity(VK plonk.VerifyingKey, proof plonk.Proof, publicWitness 
 func main() {
 
 	// Using precomputations
-	r1cs, PK, VK := loading_circuit_precomputation()
-	witnessFull, publicWitness := load_witness(r1cs)
+	// r1cs, PK, VK := loading_circuit_precomputation()
+	// witnessFull, publicWitness := load_witness(r1cs)
 
 	// Without precomputations
-	// r1cs, PK, VK := circuit_precomputation()
-	// witnessFull, publicWitness := generate_witness()
+	r1cs, PK, VK := circuit_precomputation()
+	witnessFull, publicWitness := generate_witness()
 
 	// Proof and verify
 	proof := prove_and_verify(r1cs, PK, VK, witnessFull, publicWitness)
