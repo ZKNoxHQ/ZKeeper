@@ -73,7 +73,7 @@ incircuit verification: h(kpub, nonce)=commitment && ecdsaVerify(kpub, messageha
 -----
 ## 🚀 Deployments
 
-
+- Zircuit: https://explorer.garfield-testnet.zircuit.com/address/0xd70bb0f082FCf522B25592fC8dE8D396e8289544?activeTab=3
 
 -----
 
