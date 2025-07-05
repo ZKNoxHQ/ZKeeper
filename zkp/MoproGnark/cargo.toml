@@ -1,4 +1,4 @@
-[package] 
+[package]
 name = "verify-rust"
 version = "0.1.0"
 edition = "2021"
@@ -25,6 +25,3 @@ path = "src/bin/test_verify_rust.rs"
 name = "simple_app"
 path = "examples/simple_app.rs"
 required-features = ["json"]
-
-[build-dependencies]
-# No additional build dependencies needed for basic linking
