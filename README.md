@@ -15,7 +15,7 @@
 ## 🚀 Description
 
 This projects demonstrates role based access control enforced by EIP-7702.
-RBAC is a model for authorizing end-user access to systems. Zkeeper RBAC prevents hacks like Bybit, which are also possible bc. same keys are used for "sudo"  cmd (configuration, admin power) and basic commands.
+RBAC is a model for authorizing end-user access to systems. Zkipper RBAC prevents hacks like Bybit, which are also possible bc. same keys are used for "sudo"  cmd (configuration, admin power) and basic commands.
 By separating **physically** admin functions (using different devices), user are protected from misbehavior, or trapped UI.
 
 
@@ -42,7 +42,7 @@ Our solution builds upon the new EIP-7702 standard to create a flexible smart ac
 
 
 
-The sudo account is protected by FALCON signatures, why standard commands are signed by ecdsa. At the entrance of Zkeeper, an analyzer estimates the level (sudo, standard) of the transaction. Then it is forwarded to be signed by the right role.
+The sudo account is protected by FALCON signatures, why standard commands are signed by ecdsa. At the entrance of Zkipper, an analyzer estimates the level (sudo, standard) of the transaction. Then it is forwarded to be signed by the right role.
 
 ### What is serious and what is mocked ?
 
@@ -56,4 +56,12 @@ The sudo account is protected by FALCON signatures, why standard commands are si
 - The ZK verifier only takes one signer, in the future any k out of m circuit can be used instead.
 
 -----
+
+## 🔮 ZKproof
+
+The current assessment proved is "I know a preimage of commitment = H(Kpub, Nonce)", to commit the public key in the contract without revealing it. This will allow to increase the number of shares, pick a threshold in the future. Currently it is hiding the public key value, and provide a resistance against a trapped HW.
+
+
+-----
+
 
