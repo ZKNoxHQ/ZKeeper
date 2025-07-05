@@ -40,6 +40,7 @@ Our solution builds upon the new EIP-7702 standard to create a flexible smart ac
 3.  **Wristband Interaction:** The wristband's ARX chip securely generates a signature using its embedded key, it is used to generate the witnesses of the zkProof (ECDSA over k1).
 4.  **Post-Quantum Signing:** The signature is then processed with the FALCON post-quantum algorithm (via JavaScript integration).
 
+![image](https://github.com/user-attachments/assets/59332950-bed2-4a5b-8f8b-7c280d509c89)
 
 
 The sudo account is protected by FALCON signatures, why standard commands are signed by ecdsa. At the entrance of Zkipper, an analyzer estimates the level (sudo, standard) of the transaction. Then it is forwarded to be signed by the right role.
