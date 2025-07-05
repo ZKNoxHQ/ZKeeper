@@ -2,7 +2,8 @@ clean:
 	rm *.bin *.json solidity/src/Verifier.sol solidity/test/Verifier.t.sol go.mod go.sum
 
 run: 
-	rm go.mod go.sum
+	@if [ -f go.mod ]; then rm go.mod; fi
+	@if [ -f go.sum ]; then rm go.sum; fi
 	go mod init mopro-gnark
 	go mod tidy
 	mkdir -p solidity/src

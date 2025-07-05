@@ -2,20 +2,23 @@ package main
 
 import (
 	"bytes"
+	"io"
+	"time"
 
 	"crypto/rand"
 
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/big"
 	"os"
-	"time" // Added for performance timing
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	// Added for performance timing
 	"github.com/consensys/gnark-crypto/ecc"
+
+	// cryptoposeidon2 "github.com/consensys/gnark-crypto/ecc/bn254/fr/poseidon2"
+	cryptomimc "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	cryptoecdsa "github.com/consensys/gnark-crypto/ecc/secp256k1/ecdsa"
 
@@ -24,6 +27,7 @@ import (
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/scs"
 	"github.com/consensys/gnark/std/algebra/emulated/sw_emulated"
+	"github.com/consensys/gnark/std/hash/mimc"
 	"github.com/consensys/gnark/std/math/emulated"
 	"github.com/consensys/gnark/std/signature/ecdsa"
 
@@ -32,14 +36,25 @@ import (
 
 // EcdsaCircuit defines the circuit structure as provided by you.
 type EcdsaCircuit[T, S emulated.FieldParams] struct {
-	Sig ecdsa.Signature[S]    `gnark:",secret"` // secret input
-	Msg emulated.Element[S]   `gnark:",public"` // Public input
-	Pub ecdsa.PublicKey[T, S] `gnark:",public"` // Public input
+	Sig     ecdsa.Signature[S]    `gnark:",secret"` // signature
+	Msg     emulated.Element[S]   `gnark:",public"` // message
+	Pub     ecdsa.PublicKey[T, S] `gnark:",secret"` // now secret
+	Address frontend.Variable     `gnark:",secret"` // secret address
+	Nonce   frontend.Variable     `gnark:",secret"` // secret nonce
+	Com     frontend.Variable     `gnark:",public"` // public commitment
 }
 
 func (c *EcdsaCircuit[T, S]) Define(api frontend.API) error {
 	curveParams := sw_emulated.GetCurveParams[T]()
 	c.Pub.Verify(api, curveParams, &c.Msg, &c.Sig)
+
+	mimc, _ := mimc.NewMiMC(api)
+
+	// specify constraints
+	// mimc(preImage) == hash
+	mimc.Write(c.Address)
+	mimc.Write(c.Nonce)
+	api.AssertIsEqual(c.Com, mimc.Sum())
 	return nil
 }
 
@@ -50,7 +65,12 @@ type ProveInputEcdsa struct {
 	S       string `json:"s"`       // Hex string of signature S
 	PubX    string `json:"pubX"`    // Hex string of public key X
 	PubY    string `json:"pubY"`    // Hex string of public key Y
+	Address string `json:"address"` // Hex string of address
+	Nonce   string `json:"nonce"`   // Hex string of nonce
+	Com     string `json:"com"`     // Hex string of Com
 }
+
+
 
 func main() {
 	fmt.Println("--- Generating ECDSA circuit inputs and performing compliance check ---")
@@ -85,12 +105,37 @@ func main() {
 	xBytes := publicKey.A.X.Bytes()
 	yBytes := publicKey.A.Y.Bytes()
 
+	// INSECURE
+	nonce := make([]byte, 31)
+	// Fill with cryptographically secure random data
+	_, err := rand.Read(nonce)
+	if err != nil {
+		panic(err)
+	}
+
+	address := big.NewInt(12345).Bytes()
+
+	// PK Commitment
+	h := cryptomimc.NewMiMC()
+	_, err = h.Write(address)
+	if err != nil {
+		panic(err)
+	}
+	_, err = h.Write(nonce)
+	if err != nil {
+		panic(err)
+	}
+	ComPK := h.Sum(nil)
+
 	proveInput := ProveInputEcdsa{
 		MsgHash: hex.EncodeToString(hash.Bytes()), // Assuming msgHash is already a slice or handle it similarly if it's an array
 		R:       hex.EncodeToString(r.Bytes()),    // Assuming r.Bytes() returns a slice or handle it if it's an array
 		S:       hex.EncodeToString(s.Bytes()),    // Assuming s.Bytes() returns a slice or handle it if it's an array
 		PubX:    hex.EncodeToString(xBytes[:]),    // Slice the temporary variable
 		PubY:    hex.EncodeToString(yBytes[:]),    // Slice the temporary variable
+		Address: hex.EncodeToString(address[:]),
+		Nonce:   hex.EncodeToString(nonce[:]),
+		Com:     hex.EncodeToString(ComPK),
 	}
 
 	proveInputJSON, err := json.MarshalIndent(proveInput, "", "  ")
@@ -120,6 +165,14 @@ func main() {
 	}
 	fmt.Printf("Setup done.\n")
 
+	nonce_bigint := new(big.Int).SetBytes(nonce)
+	compk_bigint := new(big.Int).SetBytes(ComPK)
+	pkx_bigint := new(big.Int)
+	publicKey.A.X.BigInt(pkx_bigint)
+	pky_bigint := new(big.Int)
+	publicKey.A.Y.BigInt(pky_bigint)
+	address_bigint := new(big.Int).SetBytes(address)
+
 	// 5. Create the full witness for the circuit (includes private and public parts)
 	witnessCircuit := EcdsaCircuit[emulated.Secp256k1Fp, emulated.Secp256k1Fr]{
 		Sig: ecdsa.Signature[emulated.Secp256k1Fr]{
@@ -131,6 +184,9 @@ func main() {
 			X: emulated.ValueOf[emulated.Secp256k1Fp](publicKey.A.X),
 			Y: emulated.ValueOf[emulated.Secp256k1Fp](publicKey.A.Y),
 		},
+		Address: address_bigint,
+		Nonce:   nonce_bigint,
+		Com:     compk_bigint,
 	}
 	witnessFull, err := frontend.NewWitness(&witnessCircuit, ecc.BN254.ScalarField())
 	if err != nil {
@@ -151,6 +207,8 @@ func main() {
 	writeToFile("witness_input.json", bytes.NewReader(proveInputJSON))
 
 	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
+
+	fmt.Println(publicWitness)
 
 	// 7. Perform a compliance check: Prove and Verify
 	fmt.Println("\n--- Performing compliance check (Prove & Verify within generate_input.go) ---")
@@ -178,21 +236,6 @@ func main() {
 	testReadFromFile()
 
 	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
-
-	// // 9. Export the Solidity verifier contract
-	// fmt.Println("\n--- Exporting Solidity Verifier ---")
-	// verifierFile, err := os.Create("verifier1.sol")
-	// if err != nil {
-	// 	fmt.Printf("Error creating verifier1.sol: %v\n", err)
-	// 	os.Exit(1)
-	// }
-	// defer verifierFile.Close()
-	// err = ecdsaVK.ExportSolidity(verifierFile)
-	// if err != nil {
-	// 	fmt.Printf("Error exporting solidity verifier: %v\n", err)
-	// 	os.Exit(1)
-	// }
-	// fmt.Println("Successfully exported verifier.sol")
 
 }
 
@@ -314,11 +357,29 @@ func testReadFromFile() {
 		fmt.Printf("Error decoding PubY hex: %v\n", err)
 		os.Exit(1)
 	}
+	addressBytes, err := hex.DecodeString(loadedProveInput.Address)
+	if err != nil {
+		fmt.Printf("Error decoding Address hex: %v\n", err)
+		os.Exit(1)
+	}
+	nonceBytes, err := hex.DecodeString(loadedProveInput.Nonce)
+	if err != nil {
+		fmt.Printf("Error decoding Nonce hex: %v\n", err)
+		os.Exit(1)
+	}
+	comBytes, err := hex.DecodeString(loadedProveInput.Com)
+	if err != nil {
+		fmt.Printf("Error decoding Com hex: %v\n", err)
+		os.Exit(1)
+	}
 
 	rLoaded := new(big.Int).SetBytes(rBytes)
 	sLoaded := new(big.Int).SetBytes(sBytes)
 	pubXLoaded := new(big.Int).SetBytes(pubXBytes)
 	pubYLoaded := new(big.Int).SetBytes(pubYBytes)
+	addressLoaded := new(big.Int).SetBytes(addressBytes)
+	nonceLoaded := new(big.Int).SetBytes(nonceBytes)
+	comLoaded := new(big.Int).SetBytes(comBytes)
 
 	// 5. Create a new witness using the loaded input data
 	witnessCircuitLoaded := EcdsaCircuit[emulated.Secp256k1Fp, emulated.Secp256k1Fr]{
@@ -331,6 +392,9 @@ func testReadFromFile() {
 			X: emulated.ValueOf[emulated.Secp256k1Fp](pubXLoaded),
 			Y: emulated.ValueOf[emulated.Secp256k1Fp](pubYLoaded),
 		},
+		Address: addressLoaded,
+		Nonce:   nonceLoaded,
+		Com:     comLoaded,
 	}
 	witnessFullLoaded, err := frontend.NewWitness(&witnessCircuitLoaded, ecc.BN254.ScalarField())
 	if err != nil {
@@ -416,12 +480,12 @@ contract VerifierTest is Test {
 
 	PI := fmt.Sprintf("%v", publicWitnessLoaded.Vector())
 
-	verifierTestFile.Write([]byte("uint64[12] memory public_inputs = " + PI + ";\n"))
+	verifierTestFile.Write([]byte("uint64[5] memory public_inputs = " + PI + ";\n"))
 
 	// footer
 	verifierTestFile.Write([]byte(`
-        uint256[] memory inputs = new uint256[](12);
-        for (uint i = 0; i < 12; i++) inputs[i] = uint256(public_inputs[i]);
+        uint256[] memory inputs = new uint256[](5);
+        for (uint i = 0; i < 5; i++) inputs[i] = uint256(public_inputs[i]);
 
         bool res = ZkK1.Verify(proof, inputs);
         assertTrue(res);
