@@ -24,9 +24,8 @@ impl std::error::Error for VerifyError {}
 /// Result type for verification operations
 pub type VerifyResult<T> = Result<T, VerifyError>;
 
-// External C function declaration
-// This links to the verify() function exported from your Go CGO library
-extern "C" {
+// External C function declaration - now marked as unsafe
+unsafe extern "C" {
     fn verify() -> *mut c_char;
 }
 
