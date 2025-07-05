@@ -41,7 +41,7 @@ type InputWithCommit struct {
 func main() {
 
 	var loadedInput Input
-	err := readFromFile("sig_from_nico.json", &loadedInput)
+	err := readFromFile("signed_transaction.json", &loadedInput)
 	if err != nil {
 		fmt.Printf("Error reading witness_input.json: %v\n", err)
 		os.Exit(1)
@@ -114,7 +114,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	writeToFile("witness_input_for_nico.json", bytes.NewReader(OutputJSON))
+	writeToFile("witness_input.json", bytes.NewReader(OutputJSON))
 
 }
 
