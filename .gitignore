@@ -1,0 +1,7 @@
+zkp/go.mod
+zkp/go.sum
+zkp/solidity/broadcast/
+zkp/solidity/cache/
+zkp/solidity/out/
+zkp/solidity/test/Verifier.t.sol
+zkp/witness_input.json
