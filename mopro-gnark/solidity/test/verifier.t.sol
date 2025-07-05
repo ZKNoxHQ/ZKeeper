@@ -24,6 +24,9 @@ function test_k1Plonk() public{
 
 
 
-    ZkK1.Verify(proof, inputs);
+    bool res=ZkK1.Verify(proof, inputs);
+
+    console.log(res);
+
 }
 }
