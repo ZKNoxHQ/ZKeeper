@@ -5,3 +5,4 @@ zkp/solidity/cache/
 zkp/solidity/out/
 zkp/solidity/test/Verifier.t.sol
 zkp/witness_input.json
+zkp/signed_transaction.json
