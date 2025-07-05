@@ -1,0 +1,3 @@
+```
+forge test -vvv
+```

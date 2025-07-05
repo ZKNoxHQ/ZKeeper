@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes" 
-	
+	"bytes"
+
 	"crypto/rand"
-	
+
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,33 +12,28 @@ import (
 	"math/big"
 	"os"
 	"time" // Added for performance timing
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/consensys/gnark-crypto/ecc"
-	
-	
-	cryptoecdsa "github.com/consensys/gnark-crypto/ecc/secp256k1/ecdsa"
 
-	//fr_secp256k1 "github.com/consensys/gnark-crypto/ecc/secp256k1/fr"
+	cryptoecdsa "github.com/consensys/gnark-crypto/ecc/secp256k1/ecdsa"
 
 	"github.com/consensys/gnark/backend/plonk"
 	plonk_bn254 "github.com/consensys/gnark/backend/plonk/bn254"
-
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/scs"
 	"github.com/consensys/gnark/std/algebra/emulated/sw_emulated"
 	"github.com/consensys/gnark/std/math/emulated"
 	"github.com/consensys/gnark/std/signature/ecdsa"
 
-
 	"github.com/consensys/gnark/test/unsafekzg"
-	
 )
 
 // EcdsaCircuit defines the circuit structure as provided by you.
 type EcdsaCircuit[T, S emulated.FieldParams] struct {
-	Sig ecdsa.Signature[S] `gnark:",secret"` // secret input
-	Msg emulated.Element[S] `gnark:",public"` // Public input
+	Sig ecdsa.Signature[S]    `gnark:",secret"` // secret input
+	Msg emulated.Element[S]   `gnark:",public"` // Public input
 	Pub ecdsa.PublicKey[T, S] `gnark:",public"` // Public input
 }
 
@@ -65,8 +60,8 @@ func main() {
 	publicKey := privKey.PublicKey
 
 	msg := []byte("testing ECDSA (pre-hashed)")
-	
-	sigBin, _ := privKey.Sign( msg, nil)
+
+	sigBin, _ := privKey.Sign(msg, nil)
 
 	// unmarshal signature
 	var sig cryptoecdsa.Signature
@@ -74,12 +69,11 @@ func main() {
 	r, s := new(big.Int), new(big.Int)
 	r.SetBytes(sig.R[:32])
 	s.SetBytes(sig.S[:32])
-	
+
 	//msgHash := sha256.Sum256(msg)
 
-
 	hash := cryptoecdsa.HashToInt(msg)
-	
+
 	// check that the signature is correct
 	flag, _ := publicKey.Verify(sigBin, msg, nil)
 	if !flag {
@@ -87,17 +81,17 @@ func main() {
 	}
 
 	// 2. Prepare JSON input for proving
-    // Store the byte arrays in temporary variables first
-    xBytes := publicKey.A.X.Bytes()
-    yBytes := publicKey.A.Y.Bytes()
+	// Store the byte arrays in temporary variables first
+	xBytes := publicKey.A.X.Bytes()
+	yBytes := publicKey.A.Y.Bytes()
 
-    proveInput := ProveInputEcdsa{
-        MsgHash: hex.EncodeToString(hash.Bytes()), // Assuming msgHash is already a slice or handle it similarly if it's an array
-        R:       hex.EncodeToString(r.Bytes()),  // Assuming r.Bytes() returns a slice or handle it if it's an array
-        S:       hex.EncodeToString(s.Bytes()),  // Assuming s.Bytes() returns a slice or handle it if it's an array
-        PubX:    hex.EncodeToString(xBytes[:]), // Slice the temporary variable
-        PubY:    hex.EncodeToString(yBytes[:]), // Slice the temporary variable
-    }
+	proveInput := ProveInputEcdsa{
+		MsgHash: hex.EncodeToString(hash.Bytes()), // Assuming msgHash is already a slice or handle it similarly if it's an array
+		R:       hex.EncodeToString(r.Bytes()),    // Assuming r.Bytes() returns a slice or handle it if it's an array
+		S:       hex.EncodeToString(s.Bytes()),    // Assuming s.Bytes() returns a slice or handle it if it's an array
+		PubX:    hex.EncodeToString(xBytes[:]),    // Slice the temporary variable
+		PubY:    hex.EncodeToString(yBytes[:]),    // Slice the temporary variable
+	}
 
 	proveInputJSON, err := json.MarshalIndent(proveInput, "", "  ")
 	if err != nil {
@@ -115,7 +109,6 @@ func main() {
 	}
 	fmt.Printf("BN254 circuit compiled with %d constraints",
 		ecdsaR1CS.GetNbConstraints())
-
 
 	// 4. Perform Groth16 setup
 	fmt.Printf("Starting Plonk setup...\n")
@@ -151,7 +144,6 @@ func main() {
 	}
 	fmt.Printf("witness creation done.\n")
 
-
 	// 6. Write outputs to files (same as before)
 	writeToFile("r1cs.bin", ecdsaR1CS)
 	writeToFile("proving_key.bin", ecdsaPK)
@@ -159,7 +151,6 @@ func main() {
 	writeToFile("witness_input.json", bytes.NewReader(proveInputJSON))
 
 	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
-
 
 	// 7. Perform a compliance check: Prove and Verify
 	fmt.Println("\n--- Performing compliance check (Prove & Verify within generate_input.go) ---")
@@ -183,27 +174,25 @@ func main() {
 	fmt.Printf("Compliance check: Verification SUCCEEDED (%.1fms)!\n", float64(time.Since(startVerify).Milliseconds()))
 	fmt.Println("Compliance check PASSED. Generated inputs are valid.")
 
-
-
 	// 8. Test the ReadFromFile functionality
 	testReadFromFile()
 
 	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
 
-	  // 9. Export the Solidity verifier contract
-	  fmt.Println("\n--- Exporting Solidity Verifier ---")
-	  verifierFile, err := os.Create("verifier1.sol")
-	  if err != nil {
-		  fmt.Printf("Error creating verifier1.sol: %v\n", err)
-		  os.Exit(1)
-	  }
-	  defer verifierFile.Close()
-	  err = ecdsaVK.ExportSolidity(verifierFile)
-	  if err != nil {
-		  fmt.Printf("Error exporting solidity verifier: %v\n", err)
-		  os.Exit(1)
-	  }
-	  fmt.Println("Successfully exported verifier.sol")
+	// // 9. Export the Solidity verifier contract
+	// fmt.Println("\n--- Exporting Solidity Verifier ---")
+	// verifierFile, err := os.Create("verifier1.sol")
+	// if err != nil {
+	// 	fmt.Printf("Error creating verifier1.sol: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// defer verifierFile.Close()
+	// err = ecdsaVK.ExportSolidity(verifierFile)
+	// if err != nil {
+	// 	fmt.Printf("Error exporting solidity verifier: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println("Successfully exported verifier.sol")
 
 }
 
@@ -231,7 +220,6 @@ func writeToFile(filename string, data interface{}) {
 	}
 	fmt.Printf("Wrote %s\n", filename)
 }
-
 
 // readFromFile is a helper to deserialize and read gnark objects or JSON from files.
 func readFromFile(filename string, data interface{}) error {
@@ -377,39 +365,70 @@ func testReadFromFile() {
 	fmt.Printf("Verification from loaded files: Verification SUCCEEDED (%.1fms)!\n", float64(time.Since(startVerifyLoaded).Milliseconds()))
 	fmt.Println("ReadFromFile test PASSED. Loaded artifacts are valid and functional.")
 
+	// =========================================================================
+	// Export Solidity Verifier and Calldata
+	// =========================================================================
 
-    // =========================================================================
-    // Export Solidity Verifier and Calldata
-    // =========================================================================
+	// 8. Export the Solidity verifier contract
+	fmt.Println("\n--- Exporting Solidity Verifier ---")
+	verifierFile, err := os.Create("solidity/src/Verifier.sol")
+	if err != nil {
+		fmt.Printf("Error creating solidity/src/Verifier.sol: %v\n", err)
+		os.Exit(1)
+	}
+	defer verifierFile.Close()
+	err = loadedVK.ExportSolidity(verifierFile)
+	if err != nil {
+		fmt.Printf("Error exporting solidity verifier: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Successfully exported solidty/src/Verifier.sol")
 
-    // 8. Export the Solidity verifier contract
-    fmt.Println("\n--- Exporting Solidity Verifier ---")
-    verifierFile, err := os.Create("verifier.sol")
-    if err != nil {
-        fmt.Printf("Error creating verifier.sol: %v\n", err)
-        os.Exit(1)
+	// 9. Export the Solidity verifier test
+	fmt.Println("\n--- Exporting Solidity Verifier Test ---")
+	verifierTestFile, err := os.Create("solidity/test/Verifier.t.sol")
+	if err != nil {
+		fmt.Printf("Error creating solidity/test/Verifier.t.sol: %v\n", err)
+		os.Exit(1)
+	}
+	defer verifierTestFile.Close()
+
+	// header
+	verifierTestFile.Write([]byte(`// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+import {Test, console} from "forge-std/Test.sol";
+import {PlonkVerifier} from "../src/Verifier.sol";
+
+contract VerifierTest is Test {
+    PlonkVerifier ZkK1;
+
+    function setUp() public {
+        ZkK1 = new PlonkVerifier();
     }
-    defer verifierFile.Close()
-    err = loadedVK.ExportSolidity(verifierFile)
-    if err != nil {
-        fmt.Printf("Error exporting solidity verifier: %v\n", err)
-        os.Exit(1)
-    }
-    fmt.Println("Successfully exported verifier.sol")
+
+    function test_k1Plonk() public view {
+`))
 
 	Proof := proofLoaded.(*plonk_bn254.Proof)
-	fmt.Println(Proof)
+	verifierTestFile.Write([]byte(`bytes memory proof = hex"` + hexutil.Encode(Proof.MarshalSolidity())[2:] + `";`))
+	verifierTestFile.Write([]byte("\n"))
 
-	// Proof
-    fmt.Println("bytes memory proof = ")
-	fmt.Println(hexutil.Encode(Proof.MarshalSolidity()))
+	PI := fmt.Sprintf("%v", publicWitnessLoaded.Vector())
 
-    fmt.Println("uint256[12] input = ")
+	verifierTestFile.Write([]byte("uint64[12] memory public_inputs = " + PI + ";\n"))
 
-    fmt.Println(publicWitnessLoaded.Vector())
+	// footer
+	verifierTestFile.Write([]byte(`
+        uint256[] memory inputs = new uint256[](12);
+        for (uint i = 0; i < 12; i++) inputs[i] = uint256(public_inputs[i]);
 
-    // =========================================================================
-    // End of new code
-    // =========================================================================
+        bool res = ZkK1.Verify(proof, inputs);
+        assertTrue(res);
+        console.log(res);
+    }
+}
+`))
+	fmt.Println("Successfully exported solidty/src/Verifier.sol")
 
 }
