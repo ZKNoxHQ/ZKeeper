@@ -1,3 +1,6 @@
 [submodule "gnark/lib/forge-std"]
 	path = gnark/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "zkp/lib/forge-std"]
+	path = zkp/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
