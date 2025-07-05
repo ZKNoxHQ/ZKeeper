@@ -26,8 +26,9 @@ By separating **physically** admin functions (using different devices), user are
 Attendees will witness:
 
   * **Wristband-as-Signer:** How ETHCC wristbands, powered by ARX chips, function as direct Ethereum transaction signers.
+  * **7702 Delegation:** The wristband/Ledger will delegate its eOA to the Zkipper contract 
   * **Post-Quantum Resilience:** The signature is transmitted to the wallet, which hybridates the signature with a **FALCON512 Post-Quantum signer** within a **7702 Smart Account**, showcasing practical quantum resistance.
-  * **Role Based Transaction Signing:** Transaction are analyzed and routed to the right .
+  * **Role Based Transaction Signing:** Transaction are analyzed and routed to right account (admin or user).
 
 -----
 
