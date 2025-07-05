@@ -68,23 +68,23 @@ func main() {
 	// 8. Test the ReadFromFile functionality
 	// 1. Read back the compiled circuit
 	loadedR1CS := plonk.NewCS(ecc.BN254)
-	err := readFromFile("R1CS.BIN", loadedR1CS)
-	fmt.Printf("Read R1CS.BIN (Constraints: %d)\n", loadedR1CS.GetNbConstraints())
+	err := readFromFile("r1cs.bin", loadedR1CS)
+	fmt.Printf("Read r1cs.bin (Constraints: %d)\n", loadedR1CS.GetNbConstraints())
 
 	// 2. Read back the proving key
 	loadedPK := plonk.NewProvingKey(ecc.BN254)
-	err = readFromFile("PROVING_KEY.BIN", loadedPK)
-	fmt.Println("Read PROVING_KEY.BIN")
+	err = readFromFile("proving_key.bin", loadedPK)
+	fmt.Println("Read proving_key.bin")
 
 	// 3. Read back the verifying key
 	loadedVK := plonk.NewVerifyingKey(ecc.BN254)
-	err = readFromFile("VERIFYING_KEY.BIN", loadedVK)
-	fmt.Println("Read VERIFYING_KEY.BIN")
+	err = readFromFile("verifying_key.bin", loadedVK)
+	fmt.Println("Read verifying_key.bin")
 
 	// 4. Read back the prove input JSON
 	var loadedProveInput ProveInputEcdsa
-	err = readFromFile("WITNESS_INPUT.JSON", &loadedProveInput)
-	fmt.Println("Read WITNESS_INPUT.JSON")
+	err = readFromFile("witness_input.json", &loadedProveInput)
+	fmt.Println("Read witness_input.json")
 
 	// Decode hex strings back to big.Int and byte slices for witness construction
 	rBytes, err := hex.DecodeString(loadedProveInput.R)
@@ -127,18 +127,15 @@ func main() {
 	publicWitnessLoaded, err := witnessFullLoaded.Public()
 
 	// 6. Perform a new proof and verification using the loaded artifacts
-	fmt.Println("\n--- Proving and Verifying with loaded artifacts ---")
+	fmt.Println("\n--- Proving with loaded setup ---")
 
 	// Prove
 	startProveLoaded := time.Now()
 	proofLoaded, err := plonk.Prove(loadedR1CS, loadedPK, witnessFullLoaded)
-	fmt.Printf("Verification from loaded files: Proof generated (%.1fms).\n", float64(time.Since(startProveLoaded).Milliseconds()))
+	fmt.Printf("Proof GENERATED (%.1fms).\n", float64(time.Since(startProveLoaded).Milliseconds()))
 
 	// Verify
-	startVerifyLoaded := time.Now()
-	err = plonk.Verify(proofLoaded, loadedVK, publicWitnessLoaded)
-	fmt.Printf("Verification from loaded files: Verification SUCCEEDED (%.1fms)!\n", float64(time.Since(startVerifyLoaded).Milliseconds()))
-	fmt.Println("ReadFromFile test PASSED. Loaded artifacts are valid and functional.")
+	// err = plonk.Verify(proofLoaded, loadedVK, publicWitnessLoaded)
 
 	// 9. Export the Solidity verifier test
 	fmt.Println("\n--- Exporting Solidity Verifier Test ---")
@@ -181,10 +178,9 @@ contract VerifierTest is Test {
     }
 }
 `))
-	fmt.Println("Successfully exported solidty/src/Verifier.sol")
+	fmt.Println("Successfully exported solidty/test/Verifier.t.sol")
 
-	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
-
+	fmt.Print("\n\n\n=======================\nPROOF and PUBLIC INPUTS\n=======================\n0x", hexutil.Encode(Proof.MarshalSolidity())[2:], " \"", publicWitnessLoaded.Vector(), "\"\n")
 }
 
 // writeToFile is a helper to serialize and write gnark objects or byte readers to files.

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Check that exactly 5 arguments are given
+if [ "$#" -ne 5 ]; then
+  echo "Usage: ./file <msgHash> <r> <s> <pubX> <pubY>"
+  exit 1
+fi
+
+msgHash="$1"
+r="$2"
+s="$3"
+pubX="$4"
+pubY="$5"
+
+# Create JSON manually using a here-document
+cat > witness_input.json <<EOF
+{
+  "msgHash": "$msgHash",
+  "r": "$r",
+  "s": "$s",
+  "pubX": "$pubX",
+  "pubY": "$pubY"
+}
+EOF
+
+go run derive_pkcommit.go
+
+go run prove_blinded_k1.go
