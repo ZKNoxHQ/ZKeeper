@@ -127,18 +127,15 @@ func main() {
 	publicWitnessLoaded, err := witnessFullLoaded.Public()
 
 	// 6. Perform a new proof and verification using the loaded artifacts
-	fmt.Println("\n--- Proving and Verifying with loaded artifacts ---")
+	fmt.Println("\n--- Proving with loaded setup ---")
 
 	// Prove
 	startProveLoaded := time.Now()
 	proofLoaded, err := plonk.Prove(loadedR1CS, loadedPK, witnessFullLoaded)
-	fmt.Printf("Verification from loaded files: Proof generated (%.1fms).\n", float64(time.Since(startProveLoaded).Milliseconds()))
+	fmt.Printf("Proof GENERATED (%.1fms).\n", float64(time.Since(startProveLoaded).Milliseconds()))
 
 	// Verify
-	startVerifyLoaded := time.Now()
-	err = plonk.Verify(proofLoaded, loadedVK, publicWitnessLoaded)
-	fmt.Printf("Verification from loaded files: Verification SUCCEEDED (%.1fms)!\n", float64(time.Since(startVerifyLoaded).Milliseconds()))
-	fmt.Println("ReadFromFile test PASSED. Loaded artifacts are valid and functional.")
+	// err = plonk.Verify(proofLoaded, loadedVK, publicWitnessLoaded)
 
 	// 9. Export the Solidity verifier test
 	fmt.Println("\n--- Exporting Solidity Verifier Test ---")
@@ -181,10 +178,9 @@ contract VerifierTest is Test {
     }
 }
 `))
-	fmt.Println("Successfully exported solidty/src/Verifier.sol")
+	fmt.Println("Successfully exported solidty/test/Verifier.t.sol")
 
-	fmt.Println("\nAll input files generated successfully for CGO wrapper.")
-
+	fmt.Print("\n\n\n=======================\nPROOF and PUBLIC INPUTS\n=======================\n0x", hexutil.Encode(Proof.MarshalSolidity())[2:], " \"", publicWitnessLoaded.Vector(), "\"\n")
 }
 
 // writeToFile is a helper to serialize and write gnark objects or byte readers to files.

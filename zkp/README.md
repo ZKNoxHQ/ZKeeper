@@ -30,3 +30,18 @@ The proof can be verified using the solidity contract. It can be checked with:
 cd solidty/
 forge test -vvv
 ```
+
+## Usage during the Hackathon
+```bash
+./private_proof <msgHash> <r> <s> <pubX> <pubY>
+```
+An example of working transaction:
+```bash
+./private_proof \
+74657374696e6720454344534120287072652d68617368656429 \
+847a2bb5c0b16efca1ceb70d79d4b9d4be0d29ecf4dad712f944953e6c33758d \
+955e43f9edcf0f74cfa2b78adebcc8c8c8f30946d4820da362a7b490b321946a \
+508e802faf338c15a571878f8be339e7442e582680fab0d0ad835672e0705471 \
+d4a3fe56add0155c1ce79810a20e5c431488e79fbd3d2f425e20ecd0924eeaa4
+
+```

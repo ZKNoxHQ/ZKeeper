@@ -40,6 +40,8 @@ type InputWithCommit struct {
 
 func main() {
 
+	fmt.Println("\n--- Generating the witness ---")
+
 	var loadedInput Input
 	err := readFromFile("signed_transaction.json", &loadedInput)
 	if err != nil {
