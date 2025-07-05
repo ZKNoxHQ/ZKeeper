@@ -115,7 +115,7 @@ func writeToFile(filename string, data interface{}) {
 		fmt.Printf("Error writing to file %s: %v\n", filename, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Wrote %s\n", filename)
+	// fmt.Printf("Wrote %s\n", filename)
 }
 
 // readFromFile is a helper to deserialize and read gnark objects or JSON from files.

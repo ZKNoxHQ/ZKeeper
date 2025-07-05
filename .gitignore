@@ -6,3 +6,4 @@ zkp/solidity/out/
 zkp/solidity/test/Verifier.t.sol
 zkp/witness_input.json
 zkp/signed_transaction.json
+zkp/pub_x.json

@@ -16,3 +16,6 @@ cat > pub_x.json <<EOF
 EOF
 
 go run pub_commit.go
+
+echo "Commitment"
+sed -n 's/.*com": //p' witness_input.json
