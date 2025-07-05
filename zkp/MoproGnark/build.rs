@@ -1,5 +1,4 @@
 use std::env;
-use std::path::PathBuf;
 
 fn main() {
     // Get the current directory where libverify.so should be located
@@ -11,8 +10,11 @@ fn main() {
     // Tell cargo to link against the verify library
     println!("cargo:rustc-link-lib=dylib=verify");
     
-    // For macOS, we need to set the rpath
-    if cfg!(target_os = "macos") {
+    // For Android/Termux, we might need different rpath handling
+    if cfg!(target_os = "android") {
+        // On Android, libraries are usually loaded from specific locations
+        println!("cargo:rustc-link-arg=-Wl,-rpath,{}", current_dir.display());
+    } else if cfg!(target_os = "macos") {
         println!("cargo:rustc-link-arg=-Wl,-rpath,{}", current_dir.display());
     } else if cfg!(target_os = "linux") {
         println!("cargo:rustc-link-arg=-Wl,-rpath={}", current_dir.display());
