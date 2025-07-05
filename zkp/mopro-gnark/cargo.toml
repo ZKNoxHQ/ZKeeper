@@ -1,0 +1,30 @@
+[package]
+name = "verify-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+serde_json = { version = "1.0", optional = true }
+tokio = { version = "1.0", features = ["rt-multi-thread"], optional = true }
+
+[features]
+default = []
+async = ["tokio"]
+json = ["serde_json"]
+
+[lib]
+name = "verify_rust"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "test_verify_rust"
+path = "src/bin/test_verify_rust.rs"
+
+[[example]]
+name = "simple_app"
+path = "examples/simple_app.rs"
+required-features = ["json"]
+
+[build-dependencies]
+# No additional build dependencies needed for basic linking
