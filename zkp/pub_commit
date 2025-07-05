@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Check that exactly 1 argument is given
+if [ "$#" -ne 1 ]; then
+  echo "Usage: ./pub_commit <pubX>"
+  exit 1
+fi
+
+pubX="$1"
+
+# Create JSON manually using a here-document
+cat > pub_x.json <<EOF
+{
+  "pubX": "$pubX"
+}
+EOF
+
+go run pub_commit.go

@@ -1,6 +1,19 @@
 # Zero-knowledge proof of transaction
 
 ## How to use
+
+## Public key commitment
+In order to obtain the commitment to the public key:
+```bash
+./pub_commit <pubX>
+```
+For example,
+```bash
+./pub_commit 508e802faf338c15a571878f8be339e7442e582680fab0d0ad835672e0705471
+```
+This creates a file pub_commit.json
+
+## Proof computation
 It is possible to compute a ZK proof from a signed transaction:
 ```bash
 ./private_proof <msgHash> <r> <s> <pubX> <pubY>

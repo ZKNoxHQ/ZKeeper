@@ -12,17 +12,11 @@ s="$3"
 pubX="$4"
 pubY="$5"
 
-# Create JSON manually using a here-document
-cat > signed_transaction.json <<EOF
-{
-  "msgHash": "$msgHash",
-  "r": "$r",
-  "s": "$s",
-  "pubX": "$pubX",
-  "pubY": "$pubY"
-}
-EOF
-
-go run derive_pkcommit.go
+sed -i \
+  -e "s/\"msgHash\": \"\"/\"msgHash\": \"$msgHash\"/" \
+  -e "s/\"r\": \"\"/\"r\": \"$r\"/" \
+  -e "s/\"s\": \"\"/\"s\": \"$s\"/" \
+  -e "s/\"pubY\": \"\"/\"pubY\": \"$pubY\"/" \
+  witness_input.json
 
 go run prove_blinded_k1.go

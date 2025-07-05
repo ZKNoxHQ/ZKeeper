@@ -19,18 +19,14 @@ import (
 
 // ProveInputEcdsa struct for JSON serialization of witness inputs.
 type Input struct {
-	MsgHash string `json:"msgHash"` // Hex string of the message hash
-	R       string `json:"r"`       // Hex string of signature R
-	S       string `json:"s"`       // Hex string of signature S
-	PubX    string `json:"pubX"`    // Hex string of public key X
-	PubY    string `json:"pubY"`    // Hex string of public key Y
+	PubX string `json:"pubX"` // Hex string of public key X
 }
 
 // ProveInputEcdsa struct for JSON serialization of witness inputs.
 type InputWithCommit struct {
-	MsgHash string `json:"msgHash"` // Hex string of the message hash
-	R       string `json:"r"`       // Hex string of signature R
-	S       string `json:"s"`       // Hex string of signature S
+	MsgHash string `json:"msgHash"` // Hex string of msgHash
+	R       string `json:"r"`       // Hex string of r
+	S       string `json:"s"`       // Hex string of s
 	PubX    string `json:"pubX"`    // Hex string of public key X
 	PubY    string `json:"pubY"`    // Hex string of public key Y
 	Address string `json:"address"` // Hex string of address
@@ -40,40 +36,17 @@ type InputWithCommit struct {
 
 func main() {
 
-	fmt.Println("\n--- Generating the witness ---")
-
 	var loadedInput Input
-	err := readFromFile("signed_transaction.json", &loadedInput)
+	err := readFromFile("pub_x.json", &loadedInput)
 	if err != nil {
-		fmt.Printf("Error reading witness_input.json: %v\n", err)
+		fmt.Printf("Error reading pub_x.json: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("Read witness_input.json")
 
 	// Decode hex strings back to big.Int and byte slices for witness construction
-	rBytes, err := hex.DecodeString(loadedInput.R)
-	if err != nil {
-		fmt.Printf("Error decoding R hex: %v\n", err)
-		os.Exit(1)
-	}
-	sBytes, err := hex.DecodeString(loadedInput.S)
-	if err != nil {
-		fmt.Printf("Error decoding S hex: %v\n", err)
-		os.Exit(1)
-	}
-	msgHashBytes, err := hex.DecodeString(loadedInput.MsgHash)
-	if err != nil {
-		fmt.Printf("Error decoding MsgHash hex: %v\n", err)
-		os.Exit(1)
-	}
 	pubXBytes, err := hex.DecodeString(loadedInput.PubX)
 	if err != nil {
 		fmt.Printf("Error decoding PubX hex: %v\n", err)
-		os.Exit(1)
-	}
-	pubYBytes, err := hex.DecodeString(loadedInput.PubY)
-	if err != nil {
-		fmt.Printf("Error decoding PubY hex: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -100,11 +73,11 @@ func main() {
 	ComPK := h.Sum(nil)
 
 	Output := InputWithCommit{
-		MsgHash: hex.EncodeToString(msgHashBytes), // Assuming msgHash is already a slice or handle it similarly if it's an array
-		R:       hex.EncodeToString(rBytes),       // Assuming r.Bytes() returns a slice or handle it if it's an array
-		S:       hex.EncodeToString(sBytes),       // Assuming s.Bytes() returns a slice or handle it if it's an array
-		PubX:    hex.EncodeToString(pubXBytes[:]), // Slice the temporary variable
-		PubY:    hex.EncodeToString(pubYBytes[:]), // Slice the temporary variable
+		MsgHash: "",
+		R:       "",
+		S:       "",
+		PubX:    hex.EncodeToString(pubXBytes[:]),
+		PubY:    "",
 		Address: hex.EncodeToString(address[:]),
 		Nonce:   hex.EncodeToString(nonce[:]),
 		Com:     hex.EncodeToString(ComPK),
