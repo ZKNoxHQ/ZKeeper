@@ -1,4 +1,13 @@
+For generating a json file with the pk commitment:
 ```
-make run
+go run derive_pkcommit
 ```
-Then go to `solidity/` and run `forge test -vvv`.
+For computing the proof from the previous json file:
+```
+go run minimal_plonk
+```
+This creates a solidity file for testing:
+```
+cd solidty/
+forge test -vvv
+```
