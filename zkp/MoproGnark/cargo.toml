@@ -7,11 +7,13 @@ edition = "2021"
 libc = "0.2"
 serde_json = { version = "1.0", optional = true }
 tokio = { version = "1.0", features = ["rt-multi-thread"], optional = true }
+jni = { version = "0.21", optional = true }
 
 [features]
 default = []
 async = ["tokio"]
 json = ["serde_json"]
+android = ["jni"]
 
 [lib]
 name = "verify_rust"
