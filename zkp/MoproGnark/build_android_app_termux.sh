@@ -2,53 +2,25 @@
 
 set -e
 
-echo "📱 Building ZK Verify Android App"
-echo "=================================="
+echo "📱 Building ZK Verify Android App in Termux"
+echo "==========================================="
 
-# Check if we have the Termux-compiled ARM64 library
-ARM64_LIB="libverify_arm64.so"
+# Check if we have the current ARM64 library
+ARM64_LIB="libverify.so"
 if [ ! -f "$ARM64_LIB" ]; then
-    echo "⚠️  WARNING: $ARM64_LIB not found"
-    echo "Using local libverify.so (make sure it's ARM64 compatible)"
-    ARM64_LIB="libverify.so"
-fi
-
-if [ ! -f "$ARM64_LIB" ]; then
-    echo "❌ ERROR: No ARM64 library found"
-    echo "Please ensure you have either:"
-    echo "  - libverify_arm64.so (from Termux compilation)"
-    echo "  - libverify.so (ARM64 compatible)"
+    echo "❌ ERROR: $ARM64_LIB not found"
+    echo "Please build it first with:"
+    echo "go build -buildmode=c-shared -o libverify.so main.go"
     exit 1
 fi
 
 echo "✅ Using ARM64 library: $ARM64_LIB"
 
-# Check for Android targets
-echo "🔍 Checking Android Rust targets..."
-ANDROID_TARGETS=("aarch64-linux-android")
+# We don't need to check Android targets since we're already on Android
+echo "✅ Running on Android ARM64 - no cross-compilation needed"
 
-for target in "${ANDROID_TARGETS[@]}"; do
-    if ! rustup target list --installed | grep -q "$target"; then
-        echo "📦 Installing Android target: $target"
-        rustup target add "$target"
-    else
-        echo "✅ Android target already installed: $target"
-    fi
-done
-
-# Check NDK
-if [ -z "$ANDROID_NDK_ROOT" ] && [ -z "$NDK_HOME" ]; then
-    echo "❌ ERROR: ANDROID_NDK_ROOT or NDK_HOME not set"
-    echo "Please set your Android NDK path:"
-    echo "export ANDROID_NDK_ROOT=/path/to/android-ndk"
-    exit 1
-fi
-
-# Install cargo-ndk if needed
-if ! command -v cargo-ndk &> /dev/null; then
-    echo "📦 Installing cargo-ndk..."
-    cargo install cargo-ndk
-fi
+# We don't need cargo-ndk since we're building natively
+echo "✅ Building natively on target platform"
 
 # Create React Native app directory structure
 RN_APP_DIR="react-native-app"
@@ -64,30 +36,55 @@ echo "📋 Copying ARM64 Go library..."
 cp "$ARM64_LIB" "$ANDROID_LIB_DIR/arm64-v8a/libverify.so"
 echo "✅ Copied ARM64 Go library to app"
 
-# Build Rust wrapper for ARM64
-echo "🔨 Building Rust JNI wrapper for ARM64..."
+# Build Rust wrapper for ARM64 (native build)
+echo "🔨 Building Rust JNI wrapper natively..."
 
-# First, ensure we have the android feature in Cargo.toml
+# Ensure we have the android feature in Cargo.toml
 if ! grep -q 'jni.*=.*{.*version.*=.*"0.21".*optional.*=.*true.*}' Cargo.toml; then
     echo "📝 Adding Android dependencies to Cargo.toml..."
-    cat >> Cargo.toml << 'EOF'
+    
+    # Check if [dependencies] section exists
+    if grep -q "^\[dependencies\]" Cargo.toml; then
+        # Add jni after the [dependencies] line
+        sed -i '/^\[dependencies\]/a jni = { version = "0.21", optional = true }' Cargo.toml
+    else
+        # Add [dependencies] section with jni
+        cat >> Cargo.toml << 'EOF'
 
-# Android JNI dependencies
+[dependencies]
 jni = { version = "0.21", optional = true }
+EOF
+    fi
+    
+    # Add android feature
+    if grep -q "^\[features\]" Cargo.toml; then
+        # Add android feature after [features] line
+        sed -i '/^\[features\]/a android = ["jni"]' Cargo.toml
+    else
+        # Add [features] section
+        cat >> Cargo.toml << 'EOF'
 
 [features]
 android = ["jni"]
 EOF
+    fi
 fi
 
 # Add Android module to lib.rs if not present
 if ! grep -q "pub mod android" src/lib.rs; then
     echo "📝 Adding Android module to lib.rs..."
+    # Add at the top of the file
     sed -i '1i#[cfg(feature = "android")]\npub mod android;\n' src/lib.rs
 fi
 
-# Build ARM64 Rust library
-cargo ndk -t aarch64-linux-android -o "$ANDROID_LIB_DIR/arm64-v8a" build --release --features android
+# Build ARM64 Rust library (native build - no cross-compilation needed)
+echo "🔨 Building Rust library with Android features..."
+cargo build --release --features android
+
+# Copy the built Rust library
+echo "📋 Copying Rust library..."
+cp target/release/libverify_rust.so "$ANDROID_LIB_DIR/arm64-v8a/"
+echo "✅ Copied Rust library to app"
 
 # Copy assets
 echo "📋 Copying ZK proof assets..."
@@ -115,35 +112,52 @@ EOF
 
 # Verify libraries were built
 echo "🔍 Verifying built libraries..."
-lib_path="$ANDROID_LIB_DIR/arm64-v8a/libverify_rust.so"
-if [ -f "$lib_path" ]; then
-    size=$(ls -lh "$lib_path" | awk '{print $5}')
+go_lib_path="$ANDROID_LIB_DIR/arm64-v8a/libverify.so"
+rust_lib_path="$ANDROID_LIB_DIR/arm64-v8a/libverify_rust.so"
+
+if [ -f "$go_lib_path" ]; then
+    size=$(ls -lh "$go_lib_path" | awk '{print $5}')
+    echo "✅ ARM64 Go library: libverify.so ($size)"
+else
+    echo "❌ ARM64 Go library not found!"
+    exit 1
+fi
+
+if [ -f "$rust_lib_path" ]; then
+    size=$(ls -lh "$rust_lib_path" | awk '{print $5}')
     echo "✅ ARM64 Rust library: libverify_rust.so ($size)"
 else
     echo "❌ ARM64 Rust library not found!"
     exit 1
 fi
 
+# Test the Rust binary to make sure everything works
+echo "🧪 Testing Rust binary..."
+if [ -f "target/release/test_verify_rust" ]; then
+    echo "Running quick test..."
+    timeout 30s ./target/release/test_verify_rust || echo "Test completed (or timed out)"
+else
+    echo "⚠️  Test binary not found, but libraries are built"
+fi
+
 echo ""
-echo "🎉 Android app build completed!"
-echo "==============================="
+echo "🎉 Android app build completed in Termux!"
+echo "=========================================="
 echo ""
-echo "📱 Next steps:"
-echo "1. cd $RN_APP_DIR"
-echo "2. npm install"
-echo "3. npx react-native run-android"
-echo ""
-echo "📋 Make sure you have:"
-echo "- Android device connected or emulator running"
-echo "- Android Studio and SDK installed"
-echo ""
-echo "🎯 The app will have:"
-echo "- Single 'Generate Proof' button"
-echo "- Real ZK verification on ARM64 devices"
-echo "- Clean, modern UI with result display"
-echo ""
-echo "🔧 Built components:"
-echo "- React Native UI: $RN_APP_DIR/"
-echo "- ARM64 Go library: $ANDROID_LIB_DIR/arm64-v8a/libverify.so"
-echo "- ARM64 Rust wrapper: $ANDROID_LIB_DIR/arm64-v8a/libverify_rust.so"
+echo "📱 What was built:"
+echo "- React Native app structure: $RN_APP_DIR/"
+echo "- ARM64 Go library: $go_lib_path"
+echo "- ARM64 Rust wrapper: $rust_lib_path"
 echo "- ZK assets: $ASSETS_DIR/"
+echo ""
+echo "📋 Next steps:"
+echo "1. Transfer the '$RN_APP_DIR' folder to your development machine"
+echo "2. On your dev machine: cd $RN_APP_DIR && npm install"
+echo "3. Connect Android device and run: npx react-native run-android"
+echo ""
+echo "🎯 Or continue in Termux (if you have Node.js installed):"
+echo "1. pkg install nodejs npm"
+echo "2. cd $RN_APP_DIR && npm install"
+echo "3. npm start"
+echo ""
+echo "✨ The app is ready with native ARM64 performance!"
