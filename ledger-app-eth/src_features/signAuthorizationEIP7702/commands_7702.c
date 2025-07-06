@@ -142,10 +142,13 @@ static bool handleAuth7702TLV(const uint8_t *payload, uint16_t size) {
         // Check if the delegate is on the whitelist for this chainId
         delegateName = get_delegate_name(&auth7702->chainId, auth7702->delegate);
         if (delegateName == NULL) {
+#if 0
             // Reject if not in the whitelist
             ui_error_no_7702_whitelist();
             g_7702_sw = APDU_RESPONSE_CONDITION_NOT_SATISFIED;
             goto end;
+#endif
+	   getEthDisplayableAddress(auth7702->delegate, strings.common.toAddress, sizeof(strings.common.toAddress), auth7702->chainId);
         } else {
             strlcpy(strings.common.toAddress, delegateName, sizeof(strings.common.toAddress));
         }
