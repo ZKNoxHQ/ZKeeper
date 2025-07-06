@@ -1,4 +1,4 @@
-use jni::objects::{JClass, JString};
+use jni::objects::JClass;
 use jni::sys::jstring;
 use jni::JNIEnv;
 
@@ -6,9 +6,9 @@ use crate::{verify_proof, VerifyError};
 
 /// JNI function called from Android/Java
 /// Performs ZK proof verification and returns the result as a string
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_com_zkverify_MainActivity_verifyProof(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
 ) -> jstring {
     // Perform the verification
@@ -35,9 +35,9 @@ pub extern "system" fn Java_com_zkverify_MainActivity_verifyProof(
 }
 
 /// JNI function to test connectivity
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_com_zkverify_MainActivity_testConnection(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
 ) -> jstring {
     let result = "🦀 Rust library connection successful!\n✅ JNI bridge working\n✅ Ready for ZK verification";

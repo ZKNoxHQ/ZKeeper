@@ -42,6 +42,7 @@ The project creates a multi-layered verification system:
 
 2. **Build Rust Wrapper**:
    ```bash
+   cargo add libc #this is for Termux compilation
    cargo build --release
    ```
 
