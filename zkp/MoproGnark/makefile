@@ -19,46 +19,47 @@ test: build
 # Run the C test (alias for test)
 run: test
 
-# Build Rust bindings
+# Build Rust bindings (release mode by default)
 rust-build: build
-	@echo "Building Rust bindings..."
+	@echo "Building Rust bindings (release mode)..."
 	@chmod +x build_rust.sh
 	@./build_rust.sh
+	@cargo build --release
 
-# Run Rust tests
+# Run Rust tests (release mode)
 rust-test: rust-build
-	@echo "Running Rust tests..."
+	@echo "Running Rust tests (release mode)..."
 	@export LIBRARY_PATH="$PWD:$LIBRARY_PATH"; \
 	 export LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"; \
 	 if [[ "$OSTYPE" == "darwin"* ]]; then \
 	   export DYLD_LIBRARY_PATH="$PWD:$DYLD_LIBRARY_PATH"; \
 	 fi; \
-	 cargo test --lib
+	 cargo test --lib --release
 
-# Run Rust example with JSON features
+# Run Rust example with JSON features (release mode)
 rust-example: rust-build
-	@echo "Running Rust example with JSON features..."
+	@echo "Running Rust example with JSON features (release mode)..."
 	@export LIBRARY_PATH="$PWD:$LIBRARY_PATH"; \
 	 export LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"; \
 	 if [[ "$OSTYPE" == "darwin"* ]]; then \
 	   export DYLD_LIBRARY_PATH="$PWD:$DYLD_LIBRARY_PATH"; \
 	 fi; \
-	 cargo run --example simple_app --features json
+	 cargo run --example simple_app --features json --release
 
-# Run basic example
+# Run basic example (release mode)
 rust-basic: rust-build
-	@echo "Running basic Rust example..."
+	@echo "Running basic Rust example (release mode)..."
 	@export LIBRARY_PATH="$PWD:$LIBRARY_PATH"; \
 	 export LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"; \
 	 if [[ "$OSTYPE" == "darwin"* ]]; then \
 	   export DYLD_LIBRARY_PATH="$PWD:$DYLD_LIBRARY_PATH"; \
 	 fi; \
-	 cargo run --example basic_usage
+	 cargo run --example basic_usage --release
 
-# Run Rust test binary
+# Run Rust test binary (release mode)
 rust-run: rust-build
-	@echo "Running Rust test binary..."
-	@cd . && cargo run --bin test_verify_rust
+	@echo "Running Rust test binary (release mode)..."
+	@cd . && cargo run --bin test_verify_rust --release
 
 # Run both C and Rust tests
 test-all: test rust-test rust-run
@@ -90,7 +91,7 @@ help:
 	@echo "  test       - Build and run the C verification test"
 	@echo "  run        - Alias for test"
 	@echo ""
-	@echo "Rust targets:"
+	@echo "Rust targets (optimized release mode):"
 	@echo "  rust-build   - Build Rust bindings"
 	@echo "  rust-test    - Build and run Rust tests"
 	@echo "  rust-run     - Build and run Rust test binary"
@@ -109,6 +110,8 @@ help:
 	@echo "  - GCC compiler"
 	@echo "  - Rust toolchain (cargo, rustc)"
 	@echo "  - Required input files: r1cs.bin, proving_key.bin, verifying_key.bin, witness_input.json"
+	@echo ""
+	@echo "Note: All Rust targets use optimized release mode for best performance"
 
 # Build only the shared library
 lib:
