@@ -1,5 +1,5 @@
 clean:
-	rm *.bin *.json go.mod go.sum
+	rm -f output/*.bin output/*.json input/*.json go.mod go.sum
 
 init: 
 	@if [ -f go.mod ]; then rm go.mod; fi
@@ -10,5 +10,7 @@ init:
 	mkdir -p ../solidity/src
 	mkdir -p ../solidity/test
 
-run:
+setup:
+	go run main.go setup
+proof:
 	go run main.go

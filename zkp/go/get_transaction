@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Check that exactly 5 arguments are given
+if [ "$#" -ne 5 ]; then
+  echo "Usage: ./private_prove <msgHash> <r> <s> <pubX> <pubY>"
+  exit 1
+fi
+
+
+echo """
+{
+  \"msgHash\": \"$1\",
+  \"r\": \"$2\",
+  \"s\": \"$3\",
+  \"pubX\": \"$4\",
+  \"pubY\": \"$5\"
+}
+""" > input/transaction_input.json
